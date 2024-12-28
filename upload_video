@@ -1,0 +1,72 @@
+<?php
+$servername = "localhost";
+$username = "memo";
+$password = "";
+$dbname = "basededatos";
+
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+if ($conn->connect_error) {
+    die("Conexión fallida: " . $conn->connect_error);
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $titulo = $_POST["titulo"];
+    $descripcion = $_POST["descripcion"];
+    $tema = $_POST["tema"];
+    $url_facebook = $_POST["url_facebook"];
+    $url_youtube = $_POST["url_youtube"];
+    $url_instagram = $_POST["url_instagram"];
+    $url_linkedin = $_POST["url_linkedin"];
+
+    $target_dir = "uploads/"; // Directorio donde se guardarán los videos 
+    $target_file = $target_dir . basename($_FILES["video"]["name"]);
+    $uploadOk = 1;
+    $videoFileType = strtolower(pathinfo($target_file,PATHINFO_EXTENSION));
+
+    // Verificar si es un archivo de video real
+    $check = getimagesize($_FILES["video"]["tmp_name"]);
+    if($check !== false) {
+        $uploadOk = 1;
+    } else {
+        echo "El archivo no es un video.";
+        $uploadOk = 0;
+    }
+
+    // Verificar si el archivo ya existe
+    if (file_exists($target_file)) {
+        echo "Lo siento, el archivo ya existe.";
+        $uploadOk = 0;
+    }
+
+    // Verificar el tamaño del archivo (ejemplo: menos de 500MB)
+    if ($_FILES["video"]["size"] > 500000000) {
+        echo "Lo siento, el archivo es demasiado grande.";
+        $uploadOk = 0;
+    }
+
+    // Permitir ciertos formatos de archivo
+    if($videoFileType != "mp4" && $videoFileType != "mov" && $videoFileType != "avi" && $videoFileType != "wmv") {
+        echo "Lo siento, solo se permiten archivos MP4, MOV, AVI y WMV.";
+        $uploadOk = 0;
+    }
+
+    if ($uploadOk == 0) {
+        echo "Lo siento, tu archivo no fue subido.";
+    } else {
+        if (move_uploaded_file($_FILES["video"]["tmp_name"], $target_file)) {
+            $sql = "INSERT INTO videos (titulo, descripcion, url_video, tema, url_facebook, url_youtube, url_instagram, url_linkedin)
+            VALUES ('$titulo', '$descripcion', '$target_file', '$tema', '$url_facebook', '$url_youtube', '$url_instagram', '$url_linkedin')";
+
+            if ($conn->query($sql) === TRUE) {
+                echo "El video fue subido correctamente.";
+            } else {
+                echo "Error al insertar en la base de datos: " . $conn->error;
+            }
+        } else {
+            echo "Lo siento, hubo un error al subir tu archivo.";
+        }
+    }
+}
+$conn->close();
+?>
