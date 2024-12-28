@@ -5,25 +5,38 @@ import {
   Text,
   Video,
   TouchableOpacity,
-  GestureResponderHandlers,
+  Image,
   Dimensions,
+  Linking,
+  ActivityIndicator // Importa ActivityIndicator
 } from 'react-native';
 
 const VideoViewer = () => {
   const [videos, setVideos] = useState([]);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [touchStartY, setTouchStartY] = useState(0);
+  const [likes, setLikes] = useState({});
+  const [dislikes, setDislikes] = useState({});
+  const [loading, setLoading] = useState(true); // Estado de carga
 
   useEffect(() => {
-    // Carga de videos desde el servidor
-    fetch('https://localhost/videos.php')
-      .then((response) => response.json())
-      .then((data) => {
+    const fetchVideos = async () => {
+      try {
+        const response = await fetch('https://localhost/get_videos.php');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
         setVideos(data);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('Error al cargar los videos:', error);
-      });
+        // Manejar el error, por ejemplo, mostrando un mensaje al usuario
+      } finally {
+        setLoading(false); // Establece loading a false una vez que la carga finaliza
+      }
+    };
+
+    fetchVideos();
   }, []);
 
   const handleTouchStart = (e) => {
@@ -49,6 +62,60 @@ const VideoViewer = () => {
     setCurrentVideoIndex(index);
   };
 
+  const handleLikePress = async (videoId) => {
+    setLikes(prevLikes => ({ ...prevLikes, [videoId]: !prevLikes[videoId] }));
+    try {
+      const response = await fetch('https://localhost/like_video.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId }),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log(data.message);
+    } catch (error) {
+      console.error('Error al enviar el like:', error);
+      // Revertir el estado del like en caso de error
+      setLikes(prevLikes => ({ ...prevLikes, [videoId]: !prevLikes[videoId] }));
+    }
+  };
+
+  const handleDislikePress = async (videoId) => {
+      setDislikes(prevDislikes => ({ ...prevDislikes, [videoId]: !prevDislikes[videoId] }));
+    try {
+      const response = await fetch('https://localhost/dislike_video.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId }),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log(data.message);
+    } catch (error) {
+      console.error('Error al enviar el dislike:', error);
+        setDislikes(prevDislikes => ({ ...prevDislikes, [videoId]: !prevDislikes[videoId] }));
+    }
+  };
+
+  const openLink = (url) => {
+    if (url) {
+      Linking.openURL(url).catch(err => console.error('Error al abrir el enlace:', err));
+    }
+  };
+
+  if (loading) {
+      return (
+          <View style={[styles.container, styles.loadingContainer]}>
+              <ActivityIndicator size="large" color="#FFFFFF" />
+              <Text style={styles.loadingText}>Cargando videos...</Text>
+          </View>
+      );
+  }
+
   if (videos.length === 0) {
     return (
       <View style={styles.container}>
@@ -58,6 +125,15 @@ const VideoViewer = () => {
   }
 
   const currentVideo = videos[currentVideoIndex];
+  const videoId = currentVideo ? currentVideo.id : null;
+
+    if (!videoId) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.text}>Cargando video...</Text>
+            </View>
+        );
+    }
 
   return (
     <View
@@ -66,71 +142,3 @@ const VideoViewer = () => {
       onResponderStart={handleTouchStart}
       onResponderRelease={handleTouchEnd}
     >
-      <View style={styles.videoWrapper}>
-        <Video
-          source={{ uri: currentVideo.url_video }}
-          style={styles.video}
-          resizeMode="contain"
-          repeat
-          controls={false}
-          autoplay
-        />
-      </View>
-      <View style={styles.socialIcons}>
-        <TouchableOpacity onPress={() => openLink(currentVideo.url_facebook)}>
-          <Text style={styles.link}>Facebook</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => openLink(currentVideo.url_youtube)}>
-          <Text style={styles.link}>Youtube</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => openLink(currentVideo.url_instagram)}>
-          <Text style={styles.link}>Instagram</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => openLink(currentVideo.url_linkedin)}>
-          <Text style={styles.link}>Linkedin</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-};
-
-const openLink = (url) => {
-  // Abrir enlaces en el navegador
-  Linking.openURL(url).catch((err) => console.error('Error al abrir el enlace:', err));
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'black',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  videoWrapper: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  video: {
-    width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height,
-  },
-  socialIcons: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    flexDirection: 'row',
-  },
-  link: {
-    color: 'white',
-    fontSize: 16,
-    marginRight: 10,
-  },
-  text: {
-    color: 'white',
-    fontSize: 18,
-  },
-});
-
-export default VideoViewer;
