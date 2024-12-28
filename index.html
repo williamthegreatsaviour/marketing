@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subir Video</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa; /* Un gris claro de fondo */
+        }
+        .container {
+            margin-top: 50px;
+        }
+        .form-group label {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        Subir Video
+                    </div>
+                    <div class="card-body">
+                        <form action="upload_video.php" method="post" enctype="multipart/form-data">
+                            <div class="form-group">
+                                <label for="titulo">Título:</label>
+                                <input type="text" class="form-control" id="titulo" name="titulo" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="descripcion">Descripción:</label>
+                                <textarea class="form-control" id="descripcion" name="descripcion" rows="3"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="tema">Tema:</label>
+                                <input type="text" class="form-control" id="tema" name="tema" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="url_facebook">URL Facebook:</label>
+                                <input type="text" class="form-control" id="url_facebook" name="url_facebook">
+                            </div>
+                            <div class="form-group">
+                                <label for="url_youtube">URL Youtube:</label>
+                                <input type="text" class="form-control" id="url_youtube" name="url_youtube">
+                            </div>
+                            <div class="form-group">
+                                <label for="url_instagram">URL Instagram:</label>
+                                <input type="text" class="form-control" id="url_instagram" name="url_instagram">
+                            </div>
+                            <div class="form-group">
+                                <label for="url_linkedin">URL Linkedin:</label>
+                                <input type="text" class="form-control" id="url_linkedin" name="url_linkedin">
+                            </div>
+                            <div class="form-group">
+                                <label for="video">Selecciona un video:</label>
+                                <input type="file" class="form-control-file" id="video" name="video" accept="video/*" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">Subir Video</button>
+                        </form>
+                        <div id="mensaje"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        // Este script se encarga de mostrar los mensajes del servidor
+        const form = document.querySelector('form');
+        const mensajeDiv = document.getElementById('mensaje');
+
+        form.addEventListener('submit', (event) => {
+            event.preventDefault(); // Evita el envío normal del formulario
+
+            const formData = new FormData(form);
+
+            fetch('upload_video.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(message => {
+                mensajeDiv.innerHTML = `<div class="alert alert-info" role="alert">${message}</div>`;
+                form.reset();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mensajeDiv.innerHTML = `<div class="alert alert-danger" role="alert">Hubo un error al subir el video.</div>`;
+            });
+        });
+    </script>
+</body>
+</html>
